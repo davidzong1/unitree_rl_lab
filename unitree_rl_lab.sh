@@ -61,8 +61,11 @@ _ut_setup_conda_env() {
 # pass the arguments
 case "$1" in
     -i|--install)
+        sudo apt install git-lfs
         git lfs install # ensure git lfs is installed
         pip install -e ${UNITREE_RL_LAB_PATH}/source/unitree_rl_lab/
+        pip install -e ${UNITREE_RL_LAB_PATH}/source/custom_lab/
+        pip install -e ${UNITREE_RL_LAB_PATH}/source/labDynamics/
         _ut_setup_conda_env
         activate-global-python-argcomplete
         ;;

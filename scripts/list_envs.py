@@ -56,9 +56,12 @@ def _walk_packages(
                 yield from _walk_packages(path, info.name + ".", onerror)
 
 
-def import_packages():
+def import_packages(des_package: list[str] | None = None):
     sys.path.insert(0, f"{pathlib.Path(__file__).parent.parent}/source/unitree_rl_lab/unitree_rl_lab/tasks/")
-    for package in ["locomotion.robots", "mimic.robots"]:
+    packages = ["locomotion.robots", "mimic.robots"]
+    if des_package is not None:
+        packages.extend(f"{pkg}.Agent" for pkg in des_package)
+    for package in packages:
         package = importlib.import_module(package)
         for _ in _walk_packages(package.__path__, package.__name__ + "."):
             pass

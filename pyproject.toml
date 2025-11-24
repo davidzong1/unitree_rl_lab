@@ -3,11 +3,10 @@ requires = ["setuptools", "toml"]
 build-backend = "setuptools.build_meta"
 
 [tool.isort]
-
 atomic = true
 profile = "black"
-line_length = 120
-py_version = 310
+line_length = 150
+py_version = 311
 skip_glob = ["docs/*", "logs/*"]
 group_by_package = true
 
@@ -68,9 +67,19 @@ exclude = [
     ".git",
     ".vscode",
 ]
+extraPaths = [
+    "source/labDynamics",
+    "source/custom_lab",
+    "source/unitree_rl_lab",
+    "/home/oem/anaconda3/envs/g1/lib/python3.11/site-packages/isaaclab/source/isaaclab",
+    "/home/oem/anaconda3/envs/g1/lib/python3.11/site-packages/isaaclab_tasks/source/isaaclab_tasks",
+    "/home/oem/anaconda3/envs/g1/lib/python3.11/site-packages/isaaclab_assets/source/isaaclab_assets",
+    "/home/oem/anaconda3/envs/g1/lib/python3.11/site-packages/isaaclab_rl/source/isaaclab_rl", 
+    
+]
 
 typeCheckingMode = "basic"
-pythonVersion = "3.10"
+pythonVersion = "3.11"
 pythonPlatform = "Linux"
 enableTypeIgnoreComments = true
 
@@ -83,3 +92,7 @@ reportMissingModuleSource = "none" # -> most common: prettytable in mdp managers
 reportGeneralTypeIssues = "none"       # -> raises 218 errors (usage of literal MISSING in dataclasses)
 reportOptionalMemberAccess = "warning" # -> raises 8 errors
 reportPrivateUsage = "warning"
+
+[tool.black]
+line-length = 150
+target-version = ["py311"]

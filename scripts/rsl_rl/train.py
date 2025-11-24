@@ -13,12 +13,15 @@ import pathlib
 import sys
 
 sys.path.insert(0, f"{pathlib.Path(__file__).parent.parent}")
+repo_root = pathlib.Path(__file__).resolve().parent.parent
 from list_envs import import_packages  # noqa: F401
 
 sys.path.pop(0)
+import_packages(["custom_lab"])
 
 tasks = []
 for task_spec in gym.registry.values():
+    print(task_spec.id)
     if "Unitree" in task_spec.id and "Isaac" not in task_spec.id:
         tasks.append(task_spec.id)
 
@@ -39,16 +42,39 @@ parser.add_argument("--video_interval", type=int, default=2000, help="Interval b
 parser.add_argument("--num_envs", type=int, default=None, help="Number of environments to simulate.")
 parser.add_argument("--task", type=str, default=None, choices=tasks, help="Name of the task.")
 parser.add_argument("--seed", type=int, default=None, help="Seed used for the environment")
-parser.add_argument("--max_iterations", type=int, default=None, help="RL Policy training iterations.")
-parser.add_argument(
-    "--distributed", action="store_true", default=False, help="Run training with multiple GPUs or nodes."
-)
+parser.add_argument("--max_iterations", type=int, default=20000, help="RL Policy training iterations.")
+parser.add_argument("--device_select", type=str, default="cuda:0", help="Device to run the simulation and training on.")
+parser.add_argument("--distributed", action="store_true", default=False, help="Run training with multiple GPUs or nodes.")
+parser.add_argument("--compile_dynamic", type=bool, default=False, help="Whether to compile the cusadi dynamic library before training.")
 # append RSL-RL cli arguments
 cli_args.add_rsl_rl_args(parser)
 # append AppLauncher cli args
 AppLauncher.add_app_launcher_args(parser)
 argcomplete.autocomplete(parser)
 args_cli, hydra_args = parser.parse_known_args()
+
+# 选择使用的设备
+args_cli.device = args_cli.device_select
+touch_device_count: int = 0
+import re
+import os
+
+# 从 args_cli.device 中提取第一个 cuda:<数字>，如 "cuda:0" 或 "cuda:0,cuda:1"
+if not args_cli.distributed:
+    m = re.search(r"cuda:(\d+)", args_cli.device)
+    if m:
+        touch_device_count = int(m.group(1))
+        print(f"[INFO] Using specified GPU index: {touch_device_count}")
+    else:
+        # 未指定索引时退回到默认0
+        touch_device_count = 0
+
+# 检测是否无头，无头则不显示界面
+if args_cli.headless:
+    app_experience = f"{os.environ['EXP_PATH']}/omni.isaac.sim.python.gym.headless.kit"
+else:
+    app_experience = f"{os.environ['EXP_PATH']}/omni.isaac.sim.python.kit"
+
 
 # always enable cameras to record video
 if args_cli.video:
@@ -60,6 +86,15 @@ sys.argv = [sys.argv[0]] + hydra_args
 # launch omniverse app
 app_launcher = AppLauncher(args_cli)
 simulation_app = app_launcher.app
+
+# 检查是否需要编译cusadi动态库
+import labDynamics.forward_kinematics as fk
+
+if args_cli.compile_dynamic:
+    fk.dynamic_main(touch_device_count)
+else:
+    fk.dynamic_main_no_compile(touch_device_count)
+
 
 """Check for minimum supported RSL-RL version."""
 
@@ -92,7 +127,9 @@ import shutil
 import torch
 from datetime import datetime
 
-from rsl_rl.runners import OnPolicyRunner  # TODO: Consider printing the experiment name in the terminal.
+from rsl_rl.runners import (
+    OnPolicyRunner,
+)  # TODO: Consider printing the experiment name in the terminal.
 
 import isaaclab_tasks  # noqa: F401
 from isaaclab.envs import (
@@ -118,14 +155,15 @@ torch.backends.cudnn.benchmark = False
 
 
 @hydra_task_config(args_cli.task, "rsl_rl_cfg_entry_point")
-def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agent_cfg: RslRlOnPolicyRunnerCfg):
+def main(
+    env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg,
+    agent_cfg: RslRlOnPolicyRunnerCfg,
+):
     """Train with RSL-RL agent."""
     # override configurations with non-hydra CLI arguments
     agent_cfg = cli_args.update_rsl_rl_cfg(agent_cfg, args_cli)
     env_cfg.scene.num_envs = args_cli.num_envs if args_cli.num_envs is not None else env_cfg.scene.num_envs
-    agent_cfg.max_iterations = (
-        args_cli.max_iterations if args_cli.max_iterations is not None else agent_cfg.max_iterations
-    )
+    agent_cfg.max_iterations = args_cli.max_iterations if args_cli.max_iterations is not None else agent_cfg.max_iterations
 
     # set the environment seed
     # note: certain randomizations occur in the environment initialization so we set the seed here

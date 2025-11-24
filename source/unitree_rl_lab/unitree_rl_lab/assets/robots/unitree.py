@@ -17,8 +17,15 @@ from isaaclab.utils import configclass
 
 from unitree_rl_lab.assets.robots import unitree_actuators
 
-UNITREE_MODEL_DIR = "path/to/unitree_model"  # Replace with the actual path to your unitree_model directory
-UNITREE_ROS_DIR = "path/to/unitree_ros"  # Replace with the actual path to your unitree_ros package
+THIS_DIR = os.path.dirname(os.path.abspath(__file__))
+
+UNITREE_MODEL_DIR = "/home/oem/unitree_rl_lab/source/custom_lab/custom_lab/assets/usd/unitree"  # Replace with the actual path to your unitree_model directory
+UNITREE_ROS_DIR = (
+    "path/to/unitree_ros"  # Replace with the actual path to your unitree_ros package
+)
+g1_usd_path_cache = (
+    f"{UNITREE_MODEL_DIR}/g1/g1_29dof_rev_1_0.usd"  # <- 替换为实际 usd 文件路径
+)
 
 
 @configclass
@@ -43,7 +50,9 @@ class UnitreeUsdFileCfg(sim_utils.UsdFileCfg):
         max_depenetration_velocity=1.0,
     )
     articulation_props = sim_utils.ArticulationRootPropertiesCfg(
-        enabled_self_collisions=True, solver_position_iteration_count=8, solver_velocity_iteration_count=4
+        enabled_self_collisions=True,
+        solver_position_iteration_count=8,
+        solver_velocity_iteration_count=4,
     )
 
 
@@ -53,7 +62,9 @@ class UnitreeUrdfFileCfg(sim_utils.UrdfFileCfg):
     activate_contact_sensors: bool = True
     replace_cylinders_with_capsules = True
     joint_drive = sim_utils.UrdfConverterCfg.JointDriveCfg(
-        gains=sim_utils.UrdfConverterCfg.JointDriveCfg.PDGainsCfg(stiffness=0, damping=0)
+        gains=sim_utils.UrdfConverterCfg.JointDriveCfg.PDGainsCfg(
+            stiffness=0, damping=0
+        )
     )
     articulation_props = sim_utils.ArticulationRootPropertiesCfg(
         enabled_self_collisions=True,
@@ -230,7 +241,11 @@ UNITREE_H1_CFG = UnitreeArticulationCfg(
     ),
     actuators={
         "GO2HV-1": IdealPDActuatorCfg(
-            joint_names_expr=[".*ankle.*", ".*_shoulder_pitch_.*", ".*_shoulder_roll_.*"],
+            joint_names_expr=[
+                ".*ankle.*",
+                ".*_shoulder_pitch_.*",
+                ".*_shoulder_roll_.*",
+            ],
             effort_limit=40,
             velocity_limit=9,
             stiffness={
@@ -319,7 +334,11 @@ UNITREE_G1_23DOF_CFG = UnitreeArticulationCfg(
     ),
     actuators={
         "N7520-14.3": ImplicitActuatorCfg(
-            joint_names_expr=[".*_hip_pitch_.*", ".*_hip_yaw_.*", "waist_yaw_joint"],  # 5
+            joint_names_expr=[
+                ".*_hip_pitch_.*",
+                ".*_hip_yaw_.*",
+                "waist_yaw_joint",
+            ],  # 5
             effort_limit_sim=88,
             velocity_limit_sim=32.0,
             stiffness={
@@ -347,7 +366,11 @@ UNITREE_G1_23DOF_CFG = UnitreeArticulationCfg(
             armature=0.01,
         ),
         "N5020-16": ImplicitActuatorCfg(
-            joint_names_expr=[".*_shoulder_.*", ".*_elbow_.*", ".*_wrist_roll_.*"],  # 10
+            joint_names_expr=[
+                ".*_shoulder_.*",
+                ".*_elbow_.*",
+                ".*_wrist_roll_.*",
+            ],  # 10
             effort_limit_sim=25,
             velocity_limit_sim=37,
             stiffness=40.0,
@@ -399,7 +422,7 @@ UNITREE_G1_29DOF_CFG = UnitreeArticulationCfg(
     #     asset_path=f"{UNITREE_ROS_DIR}/robots/g1_description/g1_29dof_rev_1_0.urdf",
     # ),
     spawn=UnitreeUsdFileCfg(
-        usd_path=f"{UNITREE_MODEL_DIR}/G1/29dof/usd/g1_29dof_rev_1_0/g1_29dof_rev_1_0.usd",
+        usd_path=f"{g1_usd_path_cache}",
     ),
     init_state=ArticulationCfg.InitialStateCfg(
         pos=(0.0, 0.0, 0.8),
@@ -524,8 +547,12 @@ STIFFNESS_7520_22 = ARMATURE_7520_22 * NATURAL_FREQ**2  # 99.09842777666113
 STIFFNESS_4010 = ARMATURE_4010 * NATURAL_FREQ**2  # 16.77832748089279
 
 DAMPING_5020 = 2.0 * DAMPING_RATIO * ARMATURE_5020 * NATURAL_FREQ  # 0.907222843292423
-DAMPING_7520_14 = 2.0 * DAMPING_RATIO * ARMATURE_7520_14 * NATURAL_FREQ  # 2.5578897650279457
-DAMPING_7520_22 = 2.0 * DAMPING_RATIO * ARMATURE_7520_22 * NATURAL_FREQ  # 6.3088018534966395
+DAMPING_7520_14 = (
+    2.0 * DAMPING_RATIO * ARMATURE_7520_14 * NATURAL_FREQ
+)  # 2.5578897650279457
+DAMPING_7520_22 = (
+    2.0 * DAMPING_RATIO * ARMATURE_7520_22 * NATURAL_FREQ
+)  # 6.3088018534966395
 DAMPING_4010 = 2.0 * DAMPING_RATIO * ARMATURE_4010 * NATURAL_FREQ  # 1.06814150219
 
 UNITREE_G1_29DOF_MIMIC_CFG = UnitreeArticulationCfg(

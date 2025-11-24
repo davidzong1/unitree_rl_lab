@@ -73,3 +73,6 @@ datasets
 
 # Mimic
 *.npz
+
+# Dynamics
+*.casadi
